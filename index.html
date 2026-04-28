@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>セット集計</title>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+:root{
+  --g7:#1f5c30;--g6:#2a7a40;--g5:#34a058;--g4:#4dbf70;--g3:#7dd99a;
+  --g1:#d6f5e0;--g0:#edfaf2;
+  --bg:#f4f9f5;--card:#fff;--bd:#d0e8d8;--text:#0e2419;--sub:#5a7a63;--hint:#93b89e;
+  --danger:#c93030;--dbg:#fff5f5;
+  --fn:'M PLUS Rounded 1c',sans-serif;--mono:'DM Mono',monospace;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--fn);font-size:14px;color:var(--text);background:var(--bg);display:flex;flex-direction:column}
+.safe-top{height:env(safe-area-inset-top,0px);background:var(--g7);flex-shrink:0}
+.safe-bot{height:env(safe-area-inset-bottom,0px);background:var(--card);flex-shrink:0}
+.hdr{height:52px;background:var(--g7);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0}
+.hdr-logo{display:flex;align-items:center;gap:8px;color:#fff;font-weight:800;font-size:16px}
+.badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.13);border-radius:20px;padding:3px 10px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g3);box-shadow:0 0 5px var(--g3)}
+.dot.err{background:#f87171;box-shadow:none}
+.badge-lbl{font-size:11px;color:rgba(255,255,255,.8);font-family:var(--mono)}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px 8px}
+.page{display:none}.page.on{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.sec-ttl{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.cnt{background:var(--g5);color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;font-family:var(--mono);letter-spacing:0}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:5px;letter-spacing:.5px}
+.rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.rh .lbl{margin-bottom:0}
+.fi{width:100%;background:var(--g0);border:1.5px solid var(--bd);border-radius:var(--rs);padding:9px 11px;font-family:var(--fn);font-size:14px;color:var(--text);outline:none;-webkit-appearance:none}
+.fi:focus{border-color:var(--g4);background:#fff}
+.item-row{display:grid;grid-template-columns:1fr 68px 32px;gap:5px;align-items:center;margin-bottom:5px}
+.item-row .fi{padding:7px 9px;font-size:13px}
+.rm{width:32px;height:32px;border:1.5px solid var(--bd);border-radius:var(--rs);background:var(--g0);color:var(--hint);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.rm:active{background:var(--dbg);border-color:var(--danger);color:var(--danger)}
+.add-lnk{background:none;border:none;color:var(--g5);font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;padding:2px 0}
+.actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)}
+.btn-ghost{flex:1;background:var(--g0);border:1.5px solid var(--bd);border-radius:var(--rs);padding:9px 0;font-family:var(--fn);font-size:13px;font-weight:700;color:var(--sub);cursor:pointer}
+.btn-ghost:active{background:var(--bd)}
+.btn-pri{flex:2;background:var(--g5);border:none;border-radius:var(--rs);padding:9px 0;font-family:var(--fn);font-size:14px;font-weight:700;color:#fff;cursor:pointer}
+.btn-pri:active{background:var(--g6)}
+.sets-list{display:flex;flex-direction:column;gap:7px}
+.sc{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:11px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g4);border-radius:3px 0 0 3px}
+.sc:active{background:var(--g0)}
+.sc-body{flex:1;min-width:0}
+.sc-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:3px}
+.chip{background:var(--g0);border:1px solid var(--bd);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--g7);font-weight:500}
+.chip b{font-family:var(--mono);font-weight:500;color:var(--g5)}
+.arr{color:var(--hint);font-size:16px}
+.date-fi{width:100%;background:transparent;border:none;font-family:var(--fn);font-size:17px;font-weight:700;color:var(--g7);padding:8px 6px;outline:none;-webkit-appearance:none}
+.t-rows{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.t-row{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:11px 12px;display:flex;align-items:center;gap:10px}
+.t-info{flex:1;min-width:0}
+.t-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-prev{font-size:11px;color:var(--hint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qw{display:flex;align-items:center;background:var(--g0);border:1.5px solid var(--bd);border-radius:9px;overflow:hidden;flex-shrink:0}
+.qb{width:38px;height:38px;background:transparent;border:none;color:var(--g6);font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qb:active{background:var(--g1)}
+.qi{width:44px;height:38px;text-align:center;border:none;border-left:1px solid var(--bd);border-right:1px solid var(--bd);background:#fff;font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text);padding:0;outline:none;-webkit-appearance:none}
+.tally-ctrl{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.btn-wide{width:100%;background:var(--g0);border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 0;font-family:var(--fn);font-size:13px;font-weight:700;color:var(--sub);cursor:pointer}
+.btn-wide:active{background:var(--bd)}
+.btn-calc{width:100%;background:var(--g5);border:none;border-radius:var(--r);padding:15px 0;font-family:var(--fn);font-size:17px;font-weight:800;color:#fff;letter-spacing:4px;cursor:pointer}
+.btn-calc:active{background:var(--g6)}
+.result{background:var(--card);border:2px solid var(--g3);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.res-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.res-ttl{font-size:14px;font-weight:800;color:var(--g7)}
+.res-date{font-family:var(--mono);font-size:12px;color:var(--sub)}
+.res-sub{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--hint);text-transform:uppercase;margin-bottom:7px}
+.res-row{display:flex;justify-content:space-between;align-items:center;background:var(--g0);border-radius:var(--rs);padding:8px 10px;margin-bottom:4px}
+.res-row:last-child{margin-bottom:0}
+.res-nm{font-size:13px;font-weight:500}
+.res-val{font-family:var(--mono);font-size:15px;font-weight:500;color:var(--g6)}
+.res-val.big{color:var(--g5);font-size:17px;font-weight:700}
+.sep{border:none;border-top:1.5px dashed var(--bd);margin:12px 0}
+.tab-bar{height:60px;background:var(--card);border-top:1px solid var(--bd);display:flex;flex-shrink:0}
+.ti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--hint);font-family:var(--fn);font-size:10px;font-weight:700;cursor:pointer;padding-bottom:2px}
+.ti.on{color:var(--g5)}
+.toast{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(16px);background:#1a4228;color:#fff;padding:9px 18px;border-radius:30px;font-size:12px;font-weight:700;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:#7a1818}
+.sheet-ov{position:fixed;inset:0;background:rgba(10,30,15,.5);display:none;align-items:flex-end;z-index:50}
+.sheet-ov.on{display:flex}
+.sheet{width:100%;background:var(--card);border-radius:16px 16px 0 0;padding:10px 14px calc(20px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow-y:auto}
+.s-handle{width:36px;height:3px;background:var(--bd);border-radius:3px;margin:0 auto 14px}
+.s-title{font-size:15px;font-weight:800;margin-bottom:14px}
+.s-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)}
+.btn-del{width:100%;margin-top:8px;background:var(--dbg);border:1.5px solid #f5c0c0;border-radius:var(--rs);padding:10px 0;font-family:var(--fn);font-size:13px;font-weight:700;color:var(--danger);cursor:pointer}
+.btn-del:active{background:#ffe0e0}
+.ph{text-align:center;color:var(--hint);font-size:13px;padding:22px 0}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+  </style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<header class="hdr">
+  <div class="hdr-logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="2" width="9" height="9" rx="2" fill="#fff" opacity=".9"/>
+      <rect x="13" y="2" width="9" height="9" rx="2" fill="#fff" opacity=".55"/>
+      <rect x="2" y="13" width="9" height="9" rx="2" fill="#fff" opacity=".55"/>
+      <rect x="13" y="13" width="9" height="9" rx="2" fill="#fff" opacity=".9"/>
+    </svg>
+    セット集計
+  </div>
+  <div class="badge"><span class="dot" id="dot"></span><span class="badge-lbl" id="blbl">接続中</span></div>
+</header>
+
+<div class="scroll" id="scroll">
+
+  <!-- 登録ページ -->
+  <div class="page on" id="pg-register">
+    <div class="sec-ttl">新しいセットを登録</div>
+    <div class="card">
+      <div style="margin-bottom:10px">
+        <label class="lbl">セット名</label>
+        <input class="fi" id="setName" type="text" placeholder="例：春セットA">
+      </div>
+      <div>
+        <div class="rh">
+          <span class="lbl">内容物</span>
+          <button class="add-lnk" id="addItemBtn">＋ 追加</button>
+        </div>
+        <div id="itemsList"></div>
+      </div>
+      <div class="actions">
+        <button class="btn-ghost" id="clearReg">内容をクリア</button>
+        <button class="btn-pri" id="saveBtn">登録する</button>
+      </div>
+    </div>
+
+    <div class="sec-ttl" style="margin-top:18px">
+      登録済みセット <span class="cnt" id="cntBadge">0</span>
+    </div>
+    <div class="sets-list" id="setsList"><div class="ph">読み込み中…</div></div>
+  </div>
+
+  <!-- 集計ページ -->
+  <div class="page" id="pg-tally">
+    <div class="sec-ttl">日付を選択</div>
+    <div class="card" style="padding:4px 8px;margin-bottom:12px">
+      <input type="date" id="tallyDate" class="date-fi">
+    </div>
+
+    <div class="sec-ttl">セットの個数を入力</div>
+    <div class="t-rows" id="tallyRows"><div class="ph">先に登録タブでセットを登録してください</div></div>
+
+    <div class="tally-ctrl">
+      <button class="btn-wide" id="clearTally">内容をクリア</button>
+      <button class="btn-calc" id="calcBtn">集　計</button>
+    </div>
+
+    <div class="result" id="resultBox" style="display:none">
+      <div class="res-head">
+        <div class="res-ttl">集計結果</div>
+        <div class="res-date" id="resDate"></div>
+      </div>
+      <div class="res-sub">セット個数</div>
+      <div id="resSets"></div>
+      <hr class="sep">
+      <div class="res-sub">内容物 合計</div>
+      <div id="resItems"></div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="tab-bar">
+  <button class="ti on" data-pg="register">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>登録
+  </button>
+  <button class="ti" data-pg="tally">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/>
+    </svg>集計
+  </button>
+</nav>
+
+<div class="safe-bot"></div>
+
+<!-- 編集シート -->
+<div class="sheet-ov" id="editOv">
+  <div class="sheet">
+    <div class="s-handle"></div>
+    <div class="s-title">セットを編集</div>
+    <div style="margin-bottom:10px">
+      <label class="lbl">セット名</label>
+      <input class="fi" id="editName" type="text">
+    </div>
+    <div>
+      <div class="rh">
+        <span class="lbl">内容物</span>
+        <button class="add-lnk" id="editAddBtn">＋ 追加</button>
+      </div>
+      <div id="editItems"></div>
+    </div>
+    <div class="s-actions">
+      <button class="btn-ghost" id="cancelEdit">キャンセル</button>
+      <button class="btn-pri" id="updateBtn">更新する</button>
+    </div>
+    <button class="btn-del" id="deleteBtn">このセットを削除</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+// ★ Firebase設定をここに貼り付けてください ★
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, doc, updateDoc,
+  deleteDoc, onSnapshot, serverTimestamp, query, orderBy,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+const COL   = "sets";
+
+let sets = [], editId = null, toastTmr;
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// 今日の日付
+$('tallyDate').value = new Date().toISOString().slice(0,10);
+
+// タブ
+document.querySelectorAll('.ti').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ti').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    btn.classList.add('on');
+    $(`pg-${btn.dataset.pg}`).classList.add('on');
+    $('scroll').scrollTop = 0;
+  });
+});
+
+// 内容物行
+function addRow(container, name='', qty=1) {
+  const d = document.createElement('div');
+  d.className = 'item-row';
+  d.innerHTML = `<input class="fi item-name" type="text" placeholder="商品名" value="${esc(name)}">
+    <input class="fi item-qty" type="number" placeholder="数量" value="${qty}" min="1">
+    <button class="rm" type="button">✕</button>`;
+  d.querySelector('.rm').onclick = () => d.remove();
+  container.appendChild(d);
+}
+
+function collectItems(container) {
+  return [...container.querySelectorAll('.item-row')].reduce((a, r) => {
+    const n = r.querySelector('.item-name').value.trim();
+    const q = parseInt(r.querySelector('.item-qty').value) || 0;
+    if (n) a.push({ name: n, qty: q });
+    return a;
+  }, []);
+}
+
+addRow($('itemsList'));
+$('addItemBtn').onclick = () => addRow($('itemsList'));
+
+$('clearReg').onclick = () => {
+  $('setName').value = '';
+  $('itemsList').innerHTML = '';
+  addRow($('itemsList'));
+  toast('クリアしました');
+};
+
+$('saveBtn').onclick = async () => {
+  const name = $('setName').value.trim();
+  const items = collectItems($('itemsList'));
+  if (!name) return toast('セット名を入力してください', true);
+  if (!items.length) return toast('内容物を追加してください', true);
+  try {
+    await addDoc(collection(db, COL), { name, items, createdAt: serverTimestamp() });
+    $('setName').value = '';
+    $('itemsList').innerHTML = '';
+    addRow($('itemsList'));
+    toast('登録しました ✓');
+  } catch(e) { toast('保存エラー: ' + e.message, true); }
+};
+
+// Firestore購読
+const q = query(collection(db, COL), orderBy('createdAt', 'asc'));
+onSnapshot(q,
+  snap => {
+    sets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render();
+    $('dot').className = 'dot';
+    $('blbl').textContent = '同期中';
+  },
+  err => {
+    $('dot').className = 'dot err';
+    $('blbl').textContent = 'エラー';
+    toast('Firebase接続エラー', true);
+  }
+);
+
+function render() {
+  $('cntBadge').textContent = sets.length;
+  const sl = $('setsList');
+  if (!sets.length) { sl.innerHTML = '<div class="ph">まだセットが登録されていません</div>'; }
+  else {
+    sl.innerHTML = sets.map(s => `
+      <div class="sc" data-id="${s.id}">
+        <div class="sc-body">
+          <div class="sc-name">${esc(s.name)}</div>
+          <div class="chips">${s.items.map(i=>`<span class="chip">${esc(i.name)}&thinsp;<b>×${i.qty}</b></span>`).join('')}</div>
+        </div>
+        <div class="arr">›</div>
+      </div>`).join('');
+    sl.querySelectorAll('.sc').forEach(c => c.onclick = () => openSheet(c.dataset.id));
+  }
+
+  const tr = $('tallyRows');
+  const saved = {};
+  tr.querySelectorAll('.t-row[data-id]').forEach(r => saved[r.dataset.id] = r.querySelector('.qi').value);
+  if (!sets.length) { tr.innerHTML = '<div class="ph">先に登録タブでセットを登録してください</div>'; return; }
+
+  tr.innerHTML = sets.map(s => `
+    <div class="t-row" data-id="${s.id}">
+      <div class="t-info">
+        <div class="t-name">${esc(s.name)}</div>
+        <div class="t-prev">${s.items.map(i=>`${i.name}×${i.qty}`).join(' / ')}</div>
+      </div>
+      <div class="qw">
+        <button class="qb minus">－</button>
+        <input class="qi" type="number" value="${saved[s.id]||0}" min="0">
+        <button class="qb plus">＋</button>
+      </div>
+    </div>`).join('');
+
+  tr.querySelectorAll('.t-row').forEach(row => {
+    const qi = row.querySelector('.qi');
+    row.querySelector('.minus').onclick = () => { qi.value = Math.max(0, (parseInt(qi.value)||0) - 1); };
+    row.querySelector('.plus').onclick  = () => { qi.value = (parseInt(qi.value)||0) + 1; };
+    qi.onchange = () => { if (isNaN(qi.value) || qi.value < 0) qi.value = 0; };
+  });
+}
+
+$('clearTally').onclick = () => {
+  $('tallyRows').querySelectorAll('.qi').forEach(i => i.value = 0);
+  $('resultBox').style.display = 'none';
+  toast('クリアしました');
+};
+
+$('calcBtn').onclick = () => {
+  const picked = [];
+  $('tallyRows').querySelectorAll('.t-row[data-id]').forEach(row => {
+    const qty = parseInt(row.querySelector('.qi').value) || 0;
+    if (qty > 0) { const s = sets.find(x => x.id === row.dataset.id); if (s) picked.push({ s, qty }); }
+  });
+  if (!picked.length) return toast('個数を入力してください', true);
+
+  const totals = {};
+  picked.forEach(({ s, qty }) => s.items.forEach(it => { totals[it.name] = (totals[it.name]||0) + it.qty * qty; }));
+
+  $('resDate').textContent = $('tallyDate').value;
+  $('resSets').innerHTML  = picked.map(({ s, qty }) => `<div class="res-row"><div class="res-nm">${esc(s.name)}</div><div class="res-val">${qty}セット</div></div>`).join('');
+  $('resItems').innerHTML = Object.entries(totals).map(([n, t]) => `<div class="res-row"><div class="res-nm">${esc(n)}</div><div class="res-val big">${t}</div></div>`).join('');
+
+  const rb = $('resultBox');
+  rb.style.display = 'block';
+  setTimeout(() => rb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+};
+
+// 編集シート
+function openSheet(id) {
+  editId = id;
+  const s = sets.find(x => x.id === id); if (!s) return;
+  $('editName').value = s.name;
+  $('editItems').innerHTML = '';
+  s.items.forEach(i => addRow($('editItems'), i.name, i.qty));
+  $('editOv').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet() { $('editOv').classList.remove('on'); document.body.style.overflow = ''; editId = null; }
+
+$('editOv').onclick = e => { if (e.target === $('editOv')) closeSheet(); };
+$('cancelEdit').onclick = closeSheet;
+$('editAddBtn').onclick = () => addRow($('editItems'));
+
+$('updateBtn').onclick = async () => {
+  const name = $('editName').value.trim();
+  const items = collectItems($('editItems'));
+  if (!name) return toast('セット名を入力してください', true);
+  if (!items.length) return toast('内容物を追加してください', true);
+  try { await updateDoc(doc(db, COL, editId), { name, items }); toast('更新しました ✓'); closeSheet(); }
+  catch(e) { toast('更新エラー: ' + e.message, true); }
+};
+
+$('deleteBtn').onclick = async () => {
+  if (!confirm('このセットを削除しますか？')) return;
+  try { await deleteDoc(doc(db, COL, editId)); toast('削除しました'); closeSheet(); }
+  catch(e) { toast('削除エラー: ' + e.message, true); }
+};
+
+function toast(msg, err=false) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => t.className = 'toast', 2800);
+}
+</script>
+</body>
+</html>
