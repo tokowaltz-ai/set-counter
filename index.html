@@ -99,6 +99,9 @@ body{font-family:var(--fn);font-size:14px;color:var(--text);background:var(--bg)
 .btn-del{width:100%;margin-top:8px;background:var(--dbg);border:1.5px solid #f5c0c0;border-radius:var(--rs);padding:10px 0;font-family:var(--fn);font-size:13px;font-weight:700;color:var(--danger);cursor:pointer}
 .btn-del:active{background:#ffe0e0}
 .ph{text-align:center;color:var(--hint);font-size:13px;padding:22px 0}
+.btn-copy{width:100%;margin-top:10px;background:var(--g0);border:1.5px solid var(--g4);border-radius:var(--rs);padding:12px 0;font-family:var(--fn);font-size:14px;font-weight:700;color:var(--g6);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-copy:active{background:var(--g1)}
+.btn-copy.copied{background:var(--g5);border-color:var(--g5);color:#fff}
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   </style>
@@ -174,6 +177,10 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
       <hr class="sep">
       <div class="res-sub">内容物 合計</div>
       <div id="resItems"></div>
+      <button class="btn-copy" id="copyBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        テキストをコピー
+      </button>
     </div>
   </div>
 
@@ -229,12 +236,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDCjBA1QhrgU6sEcm5KNA3Y_prNx2ZX9Og",
-  authDomain: "set-counter-22fad.firebaseapp.com",
-  projectId: "set-counter-22fad",
-  storageBucket: "set-counter-22fad.firebasestorage.app",
-  messagingSenderId: "1011713479384",
-  appId: "1:1011713479384:web:7eef70ca0413265ec3bdad",
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
 };
 
 const fbApp = initializeApp(firebaseConfig);
@@ -382,9 +389,41 @@ $('calcBtn').onclick = () => {
   $('resSets').innerHTML  = picked.map(({ s, qty }) => `<div class="res-row"><div class="res-nm">${esc(s.name)}</div><div class="res-val">${qty}セット</div></div>`).join('');
   $('resItems').innerHTML = Object.entries(totals).map(([n, t]) => `<div class="res-row"><div class="res-nm">${esc(n)}</div><div class="res-val big">${t}</div></div>`).join('');
 
+  // コピー用テキストを生成して保存
+  const date = $('tallyDate').value;
+  let copyText = `【集計結果】${date}
+
+`;
+  copyText += `▼ セット個数
+`;
+  picked.forEach(({ s, qty }) => { copyText += `  ${s.name}：${qty}セット
+`; });
+  copyText += `
+▼ 内容物 合計
+`;
+  Object.entries(totals).forEach(([n, t]) => { copyText += `  ${n}：${t}
+`; });
+  $('copyBtn').dataset.text = copyText;
+  $('copyBtn').className = 'btn-copy';
+  $('copyBtn').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>テキストをコピー`;
+
   const rb = $('resultBox');
   rb.style.display = 'block';
   setTimeout(() => rb.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+};
+
+$('copyBtn').onclick = () => {
+  const text = $('copyBtn').dataset.text;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    $('copyBtn').className = 'btn-copy copied';
+    $('copyBtn').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>コピーしました！`;
+    toast('クリップボードにコピーしました ✓');
+    setTimeout(() => {
+      $('copyBtn').className = 'btn-copy';
+      $('copyBtn').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>テキストをコピー`;
+    }, 2500);
+  }).catch(() => toast('コピーに失敗しました', true));
 };
 
 // 編集シート
